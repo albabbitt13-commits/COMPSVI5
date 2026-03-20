@@ -36,15 +36,26 @@ def maximize_deliveries(time_windows):
     # TODO: Implement greedy algorithm for activity selection
     # Hint: What greedy choice gives you the most room for future deliveries?
     # Hint: Think about sorting by a specific attribute
+
+    # Sort by end time (earliest finish first)
+    sorted_windows = sorted(time_windows, key=lambda x: x['end'])
     
-    pass  # Delete this and write your code
+    selected = []
+    last_end = float('-inf')
+    
+    for delivery in sorted_windows:
+        if delivery['start'] >= last_end:
+            selected.append(delivery)
+            last_end = delivery['end']
+    
+    return selected
 
 
 # ============================================================================
 # PART 2: TRUCK LOADING (Fractional Knapsack)
 # ============================================================================
 
-def optimize_truck_load(packages, weight_limit):
+
     """
     Maximize total priority value of packages loaded within weight constraint.
     
@@ -76,14 +87,42 @@ def optimize_truck_load(packages, weight_limit):
     # Hint: What ratio determines which packages are most valuable per pound?
     # Hint: You can take fractions - if you have 5 lbs capacity left and a 10 lb package, take 0.5 of it
     
-    pass  # Delete this and write your code
+    # Sort by value-to-weight ratio (highest first)
+def optimize_truck_load(packages, weight_limit):
+    packages_sorted = sorted(
+        packages,
+        key=lambda x: x['priority'] / x['weight'],
+        reverse=True
+    )
+    
+    total_value = 0
+    total_weight = 0
+    selected = []
+    
+    for package in packages_sorted:
+        if total_weight + package['weight'] <= weight_limit:
+            selected.append((package, 1.0))
+            total_weight += package['weight']
+            total_value += package['priority']
+        else:
+            remaining = weight_limit - total_weight
+            fraction = remaining / package['weight']
+            selected.append((package, fraction))
+            total_value += package['priority'] * fraction
+            total_weight += remaining
+            break
+    
+    return {
+    "total_priority": total_value,
+    "total_weight": total_weight,
+    "packages": selected
+}
 
 
 # ============================================================================
 # PART 3: DRIVER ASSIGNMENT (Interval Scheduling)
 # ============================================================================
 
-def minimize_drivers(deliveries):
     """
     Assign deliveries to the minimum number of drivers needed.
     
@@ -112,7 +151,32 @@ def minimize_drivers(deliveries):
     # Hint: How do you know if a delivery overlaps with another?
     # Hint: Can you assign a delivery to an existing driver, or do you need a new one?
     
-    pass  # Delete this and write your code
+
+    # Sort by start time
+def minimize_drivers(deliveries):
+    deliveries_sorted = sorted(deliveries, key=lambda x: x['start'])
+    
+    drivers = []
+    assignments = []
+    
+    for delivery in deliveries_sorted:
+        assigned = False
+        
+        for i in range(len(drivers)):
+            if delivery['start'] >= drivers[i]:
+                drivers[i] = delivery['end']
+                assignments[i].append(delivery)
+                assigned = True
+                break
+        
+        if not assigned:
+            drivers.append(delivery['end'])
+            assignments.append([delivery])
+    
+    return {
+        "num_drivers": len(drivers),
+        "assignments": assignments
+    }
 
 
 # ============================================================================
@@ -297,9 +361,9 @@ if __name__ == "__main__":
     
     # Uncomment these as you complete each part:
     
-    # test_package_prioritization()
-    # test_truck_loading()
-    # test_driver_assignment()
-    # benchmark_scenarios()
+test_package_prioritization()
+test_truck_loading()
+test_driver_assignment()
+benchmark_scenarios()
     
-    print("\n⚠ Uncomment the test functions in the main block to run tests!")
+print("\n⚠ Uncomment the test functions in the main block to run tests!")
